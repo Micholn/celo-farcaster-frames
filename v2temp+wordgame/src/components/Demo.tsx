@@ -1,29 +1,21 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter
-import sdk, { FrameNotificationDetails, type Context } from "@farcaster/frame-sdk";
-import {
-  useAccount,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-  useDisconnect,
-} from "wagmi";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import sdk from "@farcaster/frame-sdk";
+import { useAccount, useDisconnect } from "wagmi";
 import { Button } from "~/components/ui/Button";
 import { truncateAddress } from "~/lib/truncateAddress";
 
 export default function Demo({ title }: { title?: string } = { title: "Frames v2 Demo" }) {
-  const router = useRouter(); // Initialize router
-
+  const router = useRouter();
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
-  const [context, setContext] = useState<Context.FrameContext>();
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
 
   useEffect(() => {
     const load = async () => {
-      const context = await sdk.context;
-      setContext(context);
+      await sdk.context; // Load context but don't store it
       sdk.actions.ready({});
     };
 
@@ -57,7 +49,7 @@ export default function Demo({ title }: { title?: string } = { title: "Frames v2
 
           {/* Disconnect Button */}
           <div className="mb-4">
-            <Button onClick={()=> disconnect}>Disconnect</Button>
+            <Button onClick={() => disconnect()}>Disconnect</Button>
           </div>
         </div>
 

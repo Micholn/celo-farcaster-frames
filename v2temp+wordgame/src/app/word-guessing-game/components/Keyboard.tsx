@@ -1,4 +1,3 @@
-import { useState } from "react";
 import TopKeyboardRow from "./TopKeyboardRow";
 import MiddleKeyboardRow from "./MiddleKeyboardRow";
 import BottomKeyboardRow from "./BottomKeyboardRow";

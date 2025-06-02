@@ -8,6 +8,9 @@ export const size = {
 
 export const contentType = "image/png";
 
+// Add this to ensure static generation
+export const dynamic = "force-static";
+
 export default async function Image() {
   return new ImageResponse(
     (

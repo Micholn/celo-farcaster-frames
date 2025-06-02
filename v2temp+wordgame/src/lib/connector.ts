@@ -1,16 +1,15 @@
 import { createConnector } from "wagmi";
 import sdk from "@farcaster/frame-sdk";
-import { getAddress, numberToHex, fromHex, SwitchChainError, type Hex } from "viem";
+import { getAddress, numberToHex, fromHex, SwitchChainError, type Hex, type Address } from "viem";
 import type { Chain } from "wagmi/chains";
 
-// Type definitions for Farcaster Wallet Provider
 interface EthProvider {
-  request(args: { method: string; params?: any[] }): Promise<unknown>;
-  on?(event: string, listener: (...args: any[]) => void): void;
-  removeListener?(event: string, listener: (...args: any[]) => void): void;
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  on?(event: string, listener: (...args: (string | string[])[]) => void): void;
+  removeListener?(event: string, listener: (...args: (string | string[])[]) => void): void;
 }
 
-type SwitchChainParameters = {
+interface SwitchChainParameters {
   chainId: number;
   addEthereumChainParameter?: {
     chainName: string;
@@ -22,7 +21,7 @@ type SwitchChainParameters = {
     rpcUrls: string[];
     blockExplorerUrls?: string[];
   };
-};
+}
 
 export function frameConnector() {
   return createConnector((config) => ({
@@ -36,10 +35,10 @@ export function frameConnector() {
       if (!provider) throw new Error("Celo wallet provider not available");
 
       try {
-        const accounts = (await provider.request({ 
-          method: "eth_requestAccounts" 
+        const accounts = (await provider.request({
+          method: "eth_requestAccounts",
         })) as string[];
-        
+
         let currentChainId = await this.getChainId();
 
         if (chainId && currentChainId !== chainId) {
@@ -48,7 +47,7 @@ export function frameConnector() {
         }
 
         return {
-          accounts: accounts.map(getAddress),
+          accounts: accounts.map((a) => getAddress(a) as Address),
           chainId: currentChainId,
         };
       } catch (error) {
@@ -67,8 +66,8 @@ export function frameConnector() {
       if (!provider) throw new Error("Celo provider not initialized");
 
       try {
-        const hexChainId = (await provider.request({ 
-          method: "eth_chainId" 
+        const hexChainId = (await provider.request({
+          method: "eth_chainId",
         })) as Hex;
         return fromHex(hexChainId, "number");
       } catch (error) {
@@ -84,12 +83,10 @@ export function frameConnector() {
       try {
         await provider.request({
           method: "wallet_switchEthereumChain",
-          params: [{ 
-            chainId: numberToHex(chainId) as Hex 
-          }]
+          params: [{ chainId: numberToHex(chainId) as Hex }],
         });
 
-        const chain = config.chains.find(c => c.id === chainId);
+        const chain = config.chains.find((c) => c.id === chainId);
         if (!chain) throw new Error("Celo chain not configured");
         return chain;
       } catch (error) {
@@ -98,15 +95,15 @@ export function frameConnector() {
       }
     },
 
-    async getAccounts(): Promise<`0x${string}`[]> {
+    async getAccounts(): Promise<Address[]> {
       const provider = await this.getProvider();
       if (!provider) return [];
 
       try {
-        const accounts = (await provider.request({ 
-          method: "eth_accounts" 
+        const accounts = (await provider.request({
+          method: "eth_accounts",
         })) as string[];
-        return accounts.map(a => getAddress(a) as `0x${string}`);
+        return accounts.map((a) => getAddress(a) as Address);
       } catch (error) {
         console.error("Failed to get Celo accounts:", error);
         return [];
@@ -120,22 +117,21 @@ export function frameConnector() {
     },
 
     async disconnect(): Promise<void> {
-      // Frame-specific cleanup if needed
     },
 
     onAccountsChanged(accounts: string[]) {
-      config.emitter.emit('change', { 
-        accounts: accounts.map(a => getAddress(a)) 
+      config.emitter.emit("change", {
+        accounts: accounts.map((a) => getAddress(a) as Address),
       });
     },
 
     onChainChanged(chain: string) {
-      const chainId = fromHex(chain as Hex, 'number');
-      config.emitter.emit('change', { chainId });
+      const chainId = fromHex(chain as Hex, "number");
+      config.emitter.emit("change", { chainId });
     },
 
     onDisconnect() {
-      config.emitter.emit('disconnect');
-    }
+      config.emitter.emit("disconnect");
+    },
   }));
 }

@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-
 import GridLetter from "./GridLetter";
 
 interface GridRowProps {

@@ -1,4 +1,3 @@
-// scripts/deploy/01_deploy_wordgame.ts
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 
@@ -8,21 +7,31 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
 
   console.log(`\n🔄 Deploying to ${network.name}...`);
-  
+
   // Verify private key is loaded
   if (!deployer) throw new Error("Deployer account not found!");
   console.log(`📡 Deployer: ${deployer}`);
 
+  // Get ethers instance
+  const ethers = hre.ethers;
+
   // Check CELO balance
-  const balance = await hre.ethers.provider.getBalance(deployer);
-  console.log(`💰 Balance: ${hre.ethers.formatEther(balance)} CELO`);
-  
-  if (balance < hre.ethers.parseEther("0.5")) 
+  const balance: bigint = await ethers.provider.getBalance(deployer);
+  console.log(`💰 Balance: ${ethers.formatEther(balance)} CELO`);
+
+  const minBalance: bigint = ethers.parseEther("0.5");
+  if (balance < minBalance) {
     throw new Error("Insufficient balance (< 0.5 CELO)");
+  }
 
   // Real-time gas price check
-  const gasPrice = await hre.ethers.provider.getGasPrice();
-  console.log(`⛽ Current Gas Price: ${hre.ethers.formatUnits(gasPrice, "gwei")} gwei`);
+  const feeData = await ethers.provider.getFeeData();
+  const gasPrice = feeData.gasPrice;
+  if (!gasPrice) throw new Error("Gas price not available");
+  
+  // Calculate premium gas price (20% higher)
+  const premiumGasPrice = gasPrice * 120n / 100n;
+  console.log(`⛽ Current Gas Price: ${ethers.formatUnits(premiumGasPrice, "gwei")} gwei (with 20% premium)`);
 
   // Force fresh deployment
   console.log("🚀 Launching deployment...");
@@ -30,8 +39,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     args: [],
     log: true,
-    gasPrice: gasPrice.mul(120).div(100), // 20% premium
-    waitConfirmations: network.name === "celo" ? 3 : 1
+    // Convert bigint to string to satisfy type requirements
+    gasPrice: premiumGasPrice.toString(), // CRITICAL FIX HERE
+    waitConfirmations: network.name === "celo" ? 3 : 1,
   });
 
   if (result.newlyDeployed) {

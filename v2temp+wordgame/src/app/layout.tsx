@@ -1,6 +1,5 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
-
-import { getSession } from "~/auth"
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
 
@@ -9,17 +8,15 @@ export const metadata: Metadata = {
   description: "A Farcaster Frames v2 demo app",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession()
-  
   return (
     <html lang="en">
       <body>
-        <Providers session={session}>{children}</Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
